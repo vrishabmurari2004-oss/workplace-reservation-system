@@ -10,6 +10,7 @@ export default function BookingsPage() {
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
 
+  
   useEffect(() => {
     refresh();
   }, []);
