@@ -9,13 +9,21 @@ export default function BookingsPage() {
   const [bookingDate, setBookingDate] = useState('');
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('');
+  const [showMyBookings, setShowMyBookings] = useState(true);
 
-  
+  const currentUsername = localStorage.getItem('username') || '';
+  const role = localStorage.getItem('role') || '';
+  const isAdmin = role === 'ROLE_ADMIN';
+
   useEffect(() => {
     refresh();
   }, []);
 
   const refresh = async () => {
+    setMessage('');
+    setMessageType('');
     try {
       const bookingsRes = await api.get('/bookings');
       const seatsRes = await api.get('/seats');
@@ -24,6 +32,8 @@ export default function BookingsPage() {
       setSeats(seatsRes.data.filter((seat) => seat.available));
     } catch (error) {
       console.error('Error fetching data:', error);
+      setMessage('Unable to load bookings.');
+      setMessageType('error');
     }
   };
 
@@ -32,12 +42,14 @@ export default function BookingsPage() {
 
     try {
       if (!seatId) {
-        alert('Please select a seat');
+        setMessage('Please select a seat');
+        setMessageType('error');
         return;
       }
 
       if (endTime <= startTime) {
-        alert('End time must be after start time');
+        setMessage('End time must be after start time');
+        setMessageType('error');
         return;
       }
 
@@ -46,19 +58,21 @@ export default function BookingsPage() {
       );
 
       if (!selectedSeat) {
-        alert('Invalid seat selected');
+        setMessage('Invalid seat selected');
+        setMessageType('error');
         return;
       }
 
       await api.post('/bookings', {
-        username: username,   // ✅ FIXED
-        seatId: selectedSeat.id, // ✅ FIXED
+        username: username,
+        seatId: selectedSeat.id,
         bookingDate,
         startTime,
         endTime,
       });
 
-      alert('Booking created successfully');
+      setMessage('Booking created successfully');
+      setMessageType('success');
 
       // Reset form
       setBookingDate('');
@@ -69,20 +83,30 @@ export default function BookingsPage() {
       refresh();
     } catch (error) {
       console.error('Booking failed:', error);
-      alert('Failed to create booking');
+      setMessage('Failed to create booking');
+      setMessageType('error');
     }
   };
 
   const handleCancel = async (id) => {
     try {
       await api.delete(`/bookings/${id}`);
-      alert('Booking cancelled');
+      setMessage('Booking cancelled');
+      setMessageType('success');
       refresh();
     } catch (error) {
       console.error('Delete failed:', error);
-      alert('Failed to cancel booking');
+      setMessage('Failed to cancel booking');
+      setMessageType('error');
     }
   };
+
+  const visibleBookings = bookings.filter((booking) => {
+    if (showMyBookings) {
+      return booking.user?.username === currentUsername;
+    }
+    return true;
+  });
 
   return (
     <div className="page">
@@ -135,12 +159,30 @@ export default function BookingsPage() {
             />
           </label>
 
-          <button type="submit">Create Booking</button>
+          <label className="button-label">
+            Book Seat
+            <button type="submit" className="submit-button">Create Booking</button>
+          </label>
         </form>
       </div>
 
       <div className="card">
         <h3>Booking List</h3>
+        <div className="filter-row">
+          <div>
+            <strong>Viewing:</strong> {showMyBookings ? `My bookings (${currentUsername})` : 'All bookings'}
+          </div>
+          {isAdmin && (
+            <label className="filter-label">
+              Show
+              <select value={showMyBookings ? 'mine' : 'all'} onChange={(e) => setShowMyBookings(e.target.value === 'mine')}>
+                <option value="mine">My bookings</option>
+                <option value="all">All bookings</option>
+              </select>
+            </label>
+          )}
+        </div>
+        {message && <p className={`message ${messageType}`}>{message}</p>}
         <table>
           <thead>
             <tr>
@@ -155,14 +197,18 @@ export default function BookingsPage() {
           </thead>
 
           <tbody>
-            {bookings.map((booking) => (
+            {visibleBookings.map((booking) => (
               <tr key={booking.id}>
                 <td>{booking.user.username}</td> {/* ✅ FIXED */}
                 <td>{booking.seat.code}</td> {/* ✅ FIXED */}
                 <td>{booking.bookingDate}</td>
                 <td>{booking.startTime}</td>
                 <td>{booking.endTime}</td>
-                <td>{booking.status}</td>
+                <td>
+                  <span className={`status-badge ${booking.status?.toLowerCase().replace(/\s+/g, '-')}`}>
+                    {booking.status}
+                  </span>
+                </td>
                 <td>
                   <button
                     type="button"

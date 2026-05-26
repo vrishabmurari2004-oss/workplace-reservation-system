@@ -8,6 +8,10 @@ export default function SeatsPage() {
   const [zone, setZone] = useState('');
   const [seatType, setSeatType] = useState('Desk');
   const [description, setDescription] = useState('');
+  const [filterFloor, setFilterFloor] = useState('');
+  const [filterZone, setFilterZone] = useState('');
+  const [filterType, setFilterType] = useState('');
+  const [filterAvailable, setFilterAvailable] = useState('all');
   const [role, setRole] = useState(null);
 
   const loadSeats = () => {
@@ -32,6 +36,22 @@ export default function SeatsPage() {
     loadSeats();
     loadRole();
   }, []);
+
+  const filteredSeats = seats.filter((seat) => {
+    if (filterFloor && !seat.floor.toLowerCase().includes(filterFloor.toLowerCase())) {
+      return false;
+    }
+    if (filterZone && !seat.zone.toLowerCase().includes(filterZone.toLowerCase())) {
+      return false;
+    }
+    if (filterType && seat.seatType !== filterType) {
+      return false;
+    }
+    if (filterAvailable !== 'all') {
+      return filterAvailable === 'available' ? seat.available : !seat.available;
+    }
+    return true;
+  });
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -79,6 +99,47 @@ export default function SeatsPage() {
       )}
 
       <div className="card">
+        <h2>Seat Filters</h2>
+        <div className="form-grid filter-row">
+          <label>
+            Floor
+            <input value={filterFloor} onChange={(e) => setFilterFloor(e.target.value)} placeholder="Floor or building" />
+          </label>
+          <label>
+            Zone
+            <input value={filterZone} onChange={(e) => setFilterZone(e.target.value)} placeholder="Zone name" />
+          </label>
+          <label>
+            Type
+            <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+              <option value="">All Types</option>
+              <option>Desk</option>
+              <option>Hot Desk</option>
+              <option>Meeting Room</option>
+            </select>
+          </label>
+          <label>
+            Status
+            <select value={filterAvailable} onChange={(e) => setFilterAvailable(e.target.value)}>
+              <option value="all">All</option>
+              <option value="available">Available</option>
+              <option value="booked">Booked</option>
+            </select>
+          </label>
+          <div className="filter-actions">
+            <button type="button" onClick={() => {
+              setFilterFloor('');
+              setFilterZone('');
+              setFilterType('');
+              setFilterAvailable('all');
+            }}>
+              Clear filters
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
         <h3>Available Seats</h3>
         <table>
           <thead>
@@ -92,13 +153,17 @@ export default function SeatsPage() {
             </tr>
           </thead>
           <tbody>
-            {seats.map((seat) => (
+            {filteredSeats.map((seat) => (
               <tr key={seat.id}>
                 <td>{seat.code}</td>
                 <td>{seat.floor}</td>
                 <td>{seat.zone}</td>
                 <td>{seat.seatType}</td>
-                <td>{seat.available ? 'Available' : 'Booked'}</td>
+                <td>
+                  <span className={`status-badge ${seat.available ? 'available' : 'booked'}`}>
+                    {seat.available ? 'Available' : 'Booked'}
+                  </span>
+                </td>
                 {role === 'ROLE_ADMIN' && (
                   <td>
                     <button type="button" onClick={async () => {

@@ -41,8 +41,18 @@ export default function DashboardPage() {
       <div className="card">
         <h3>Quick actions</h3>
         <div className="link-row">
-          <Link to="/seats">Manage Seats</Link>
-          <Link to="/bookings">Manage Bookings</Link>
+          <Link to="/seats" className="quick-action">
+            <span className="action-icon">🪑</span>
+            <span>Manage Seats</span>
+          </Link>
+          <Link to="/bookings" className="quick-action">
+            <span className="action-icon">📋</span>
+            <span>Manage Bookings</span>
+          </Link>
+          <Link to="/seat-layout" className="quick-action">
+            <span className="action-icon">🏢</span>
+            <span>Book Seat Layout view</span>
+          </Link>
         </div>
       </div>
     </div>
