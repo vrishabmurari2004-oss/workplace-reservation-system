@@ -1,0 +1,14 @@
+graph TD
+    U[User<br/>Employee/Staff] -->|Login, Book, View| Auth[Authentication<br/>Process]
+    A[Admin] -->|Login, Manage| Auth
+    Auth -->|Token, Validation| U
+    Auth -->|Token, Validation| A
+    Auth -->|User Data| DB[(Database)]
+    DB -->|Validation Data| Auth
+    
+    U -->|Requests| Sys[Booking & Management<br/>Process]
+    A -->|Requests| Sys
+    Sys -->|Operations| DB
+    DB -->|Data| Sys
+    Sys -->|Responses| U
+    Sys -->|Responses| A
